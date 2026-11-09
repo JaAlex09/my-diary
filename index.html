@@ -48,6 +48,11 @@
   input[type="date"], input[type="text"], input[type="url"] { width: 100%; min-height: 48px; padding: 12px; border: 1px solid #ddd2bd; border-radius: 12px; font-size: 17px; background: #fff; }
   .music-item { border: 1px solid #eee5d0; border-radius: 12px; background: #fff; padding: 12px; margin-top: 10px; }
   .music-item iframe { width: 100%; height: 66px; border: 0; border-radius: 8px; margin-top: 8px; display: block; }
+  .media-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .media-item { border: 1px solid #eee5d0; border-radius: 12px; background: #fff; padding: 8px; }
+  .media-item img, .media-item video { width: 100%; border-radius: 8px; display: block; max-height: 260px; object-fit: cover; }
+  .media-item video { background: #000; }
+  .media-item .btn { width: 100%; margin-top: 8px; min-height: 40px; }
   .music-item a { color: #b7793f; word-break: break-all; }
   .music-item .music-title { font-weight: 600; font-size: 16px; }
   textarea { width: 100%; min-height: 280px; padding: 14px; border: 1px solid #ddd2bd; border-radius: 12px; font-size: 17px; line-height: 1.8; background: #fff; resize: vertical; }
@@ -96,7 +101,7 @@
   <div class="card" id="backupCard" style="display:none;">
     <h2 style="margin:0 0 8px;">备份</h2>
     <p class="meta" id="statsLine" style="margin:0 0 12px;"></p>
-    <p class="meta" style="margin:0 0 12px;">日记只存在这台手机的浏览器里。换手机或清数据前，先导出一份备份文件留着。</p>
+    <p class="meta" style="margin:0 0 12px;">日记只存在这台手机的浏览器里。换手机或清数据前，先导出一份备份文件留着。注意：导出备份目前不含照片和视频，照片视频请另外自己留一份。</p>
     <div class="row">
       <button class="btn" id="exportBtn" type="button" style="flex:1;">导出备份</button>
       <button class="btn" id="importBtn" type="button" style="flex:1;">导入备份</button>
@@ -130,6 +135,11 @@
     <div style="height:10px"></div>
     <button class="btn" id="addMusicBtn" type="button" style="width:100%;">＋ 添加这首歌</button>
     <div id="musicList"></div>
+    <label>📷 照片 / 视频</label>
+    <p class="meta" style="margin: 0 0 8px;">从手机里选照片或视频加到这篇日记里。照片视频只存在这台手机的浏览器里，不会上传；导出备份目前还不含照片视频，换手机前先把原图视频自己留一份。</p>
+    <button class="btn" id="addMediaBtn" type="button" style="width:100%;">＋ 添加照片 / 视频</button>
+    <input type="file" id="mediaFileInput" accept="image/*,video/*" multiple style="display:none">
+    <div class="media-grid" id="mediaGrid"></div>
     <div class="row editor-actions">
       <span class="meta" id="countLine"></span>
       <span style="flex:1"></span>
@@ -163,7 +173,70 @@
   var selectedDate = todayStr;
   var selectedMood = '';
   var currentMusic = [];
+  var currentMedia = [];
   var currentView = 'diary';
+  var mediaDbPromise = null;
+  function openMediaDb() {
+    if (mediaDbPromise) return mediaDbPromise;
+    mediaDbPromise = new Promise(function (resolve, reject) {
+      var req = indexedDB.open('my-diary-media', 1);
+      req.onupgradeneeded = function () { req.result.createObjectStore('media', { keyPath: 'id' }); };
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { reject(req.error); };
+    });
+    return mediaDbPromise;
+  }
+  function mediaTx(mode, fn) {
+    return openMediaDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction('media', mode);
+        var store = tx.objectStore('media');
+        var result = fn(store);
+        tx.oncomplete = function () { resolve(result); };
+        tx.onerror = function () { reject(tx.error); };
+      });
+    });
+  }
+  function saveMediaBlob(file) {
+    var id = 'm' + Date.now() + Math.random().toString(36).slice(2, 8);
+    return mediaTx('readwrite', function (store) { store.put({ id: id, blob: file, type: file.type || '', name: file.name || '' }); }).then(function () { return { id: id, type: file.type || '', name: file.name || '' }; });
+  }
+  function getMediaBlob(id) {
+    return openMediaDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var req = db.transaction('media', 'readonly').objectStore('media').get(id);
+        req.onsuccess = function () { resolve(req.result ? req.result.blob : null); };
+        req.onerror = function () { reject(req.error); };
+      });
+    });
+  }
+  function deleteMediaBlob(id) { return mediaTx('readwrite', function (store) { store.delete(id); }).catch(function () {}); }
+  async function renderMedia() {
+    var grid = document.getElementById('mediaGrid');
+    grid.innerHTML = '';
+    for (var i = 0; i < currentMedia.length; i++) {
+      (function (item, idx) {
+        var blob = null;
+        getMediaBlob(item.id).then(function (b) {
+          blob = b;
+          var div = document.createElement('div');
+          div.className = 'media-item';
+          if (blob) {
+            var url = URL.createObjectURL(blob);
+            if ((item.type || '').indexOf('video') === 0) div.innerHTML = '<video src="' + url + '" controls playsinline preload="metadata"></video>';
+            else div.innerHTML = '<img src="' + url + '" alt="">';
+          } else {
+            div.innerHTML = '<p class="meta">这张照片/视频找不到了，可能被浏览器清掉了。</p>';
+          }
+          var del = document.createElement('button');
+          del.type = 'button'; del.className = 'btn danger'; del.textContent = '移除';
+          del.addEventListener('click', function () { deleteMediaBlob(item.id); currentMedia.splice(idx, 1); renderMedia(); });
+          div.appendChild(del);
+          grid.appendChild(div);
+        }).catch(function () {});
+      })(currentMedia[i], i);
+    }
+  }
 
   function pad(n) { return (n < 10 ? '0' : '') + n; }
   function toDateStr(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
@@ -278,7 +351,7 @@
       var en = entries[k];
       var div = document.createElement('div');
       div.className = 'entry';
-      div.innerHTML = '<h3>' + esc(en.title || '无标题') + '</h3><div class="meta">' + esc(k) + (en.mood ? ' · ' + esc(en.mood) : '') + ((en.music && en.music.length) ? ' · 🎵 ' + en.music.length + ' 首' : '') + '</div><p>' + esc(en.content || '') + '</p>';
+      div.innerHTML = '<h3>' + esc(en.title || '无标题') + '</h3><div class="meta">' + esc(k) + (en.mood ? ' · ' + esc(en.mood) : '') + ((en.music && en.music.length) ? ' · 🎵 ' + en.music.length + ' 首' : '') + ((en.media && en.media.length) ? ' · 📷 ' + en.media.length + ' 个' : '') + '</div><p>' + esc(en.content || '') + '</p>';
       div.addEventListener('click', function () { selectDate(k); setView('diary'); });
       box.appendChild(div);
     });
@@ -293,6 +366,8 @@
     selectedMood = en.mood || '';
     currentMusic = (en.music || []).slice();
     renderMusic();
+    currentMedia = (en.media || []).slice();
+    renderMedia();
     document.querySelectorAll('.mood-btn').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-mood') === selectedMood); });
     document.getElementById('editorTitle').textContent = entries[ds] ? '编辑 ' + ds + ' 的日记' : '写 ' + ds + ' 的日记';
     document.getElementById('deleteBtn').style.display = entries[ds] ? '' : 'none';
@@ -365,8 +440,8 @@
     var ds = document.getElementById('dateInput').value || todayStr;
     var content = document.getElementById('contentInput').value.trim();
     var title = document.getElementById('titleInput').value.trim();
-    if (!content && !title && !currentMusic.length) { toast('先写点内容或加首歌再保存'); return; }
-    entries[ds] = { date: ds, title: title, mood: selectedMood, content: content, music: currentMusic.slice(), updatedAt: new Date().toLocaleString('zh-CN') };
+    if (!content && !title && !currentMusic.length && !currentMedia.length) { toast('先写点内容、加首歌或加张照片再保存'); return; }
+    entries[ds] = { date: ds, title: title, mood: selectedMood, content: content, music: currentMusic.slice(), media: currentMedia.slice(), updatedAt: new Date().toLocaleString('zh-CN') };
     saveAll();
     toast('已保存到这台设备');
     selectDate(ds);
@@ -374,10 +449,25 @@
     if (currentView === 'list') renderList();
   });
 
+  document.getElementById('addMediaBtn').addEventListener('click', function () { document.getElementById('mediaFileInput').click(); });
+  document.getElementById('mediaFileInput').addEventListener('change', async function () {
+    var files = Array.prototype.slice.call(this.files || []);
+    if (!files.length) return;
+    toast('正在保存照片 / 视频…');
+    for (var i = 0; i < files.length; i++) {
+      try { var saved = await saveMediaBlob(files[i]); currentMedia.push(saved); }
+      catch (e) { toast('保存失败：手机存储空间可能不够了'); break; }
+    }
+    renderMedia();
+    toast('已添加，记得点保存');
+    this.value = '';
+  });
+
   document.getElementById('deleteBtn').addEventListener('click', function () {
     var ds = document.getElementById('dateInput').value;
     if (!entries[ds]) return;
     if (!confirm('确定删除 ' + ds + ' 这篇日记吗？删了就找不回来了。')) return;
+    (entries[ds].media || []).forEach(function (m) { deleteMediaBlob(m.id); });
     delete entries[ds];
     saveAll();
     toast('已删除');
