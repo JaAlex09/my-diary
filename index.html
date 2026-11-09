@@ -8,7 +8,12 @@
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html { -webkit-text-size-adjust: 100%; }
   body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: #f6f1e7; color: #33302a; line-height: 1.6; font-size: 17px; }
-  .wrap { max-width: 640px; margin: 0 auto; padding: 16px 14px calc(28px + env(safe-area-inset-bottom)); }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 16px 14px calc(96px + env(safe-area-inset-bottom)); }
+  .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: rgba(255,253,248,.96); backdrop-filter: blur(8px); border-top: 1px solid #e8dfcc; padding-bottom: env(safe-area-inset-bottom); }
+  .bottom-nav-inner { max-width: 640px; margin: 0 auto; display: flex; }
+  .nav-btn { flex: 1; min-height: 64px; border: 0; background: transparent; font-size: 13px; color: #8a8378; cursor: pointer; padding: 8px 4px 10px; }
+  .nav-btn .nav-icon { display: block; font-size: 22px; line-height: 1.2; }
+  .nav-btn.active { color: #b7793f; font-weight: 600; }
   header { text-align: center; padding: 14px 0 6px; }
   header h1 { margin: 0; font-size: 28px; letter-spacing: 4px; }
   header p { margin: 6px 0 0; color: #8a8378; font-size: 14px; }
@@ -22,7 +27,6 @@
   .btn.primary { background: #b7793f; border-color: #b7793f; color: #fff; }
   .btn.danger { background: #fff; color: #b3261e; border-color: #e5b8b4; }
   .btn:disabled { opacity: .5; cursor: default; }
-  #newTodayBtn { width: 100%; min-height: 50px; font-size: 17px; font-weight: 600; }
   .search { flex: 1; min-width: 180px; min-height: 46px; padding: 11px 14px; border: 1px solid #ddd2bd; border-radius: 12px; font-size: 16px; background: #fff; }
   .cal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
   .cal-head h2 { margin: 0; font-size: 20px; }
@@ -37,18 +41,22 @@
   .cal-day .mood { display: none; }
   .cal-day.selected .mood { color: #e8dfcc; }
   label { display: block; font-size: 14px; color: #7a7264; margin: 12px 0 6px; }
-  input[type="date"], input[type="text"] { width: 100%; min-height: 48px; padding: 12px; border: 1px solid #ddd2bd; border-radius: 12px; font-size: 17px; background: #fff; }
+  input[type="date"], input[type="text"], input[type="url"] { width: 100%; min-height: 48px; padding: 12px; border: 1px solid #ddd2bd; border-radius: 12px; font-size: 17px; background: #fff; }
+  .music-item { border: 1px solid #eee5d0; border-radius: 12px; background: #fff; padding: 12px; margin-top: 10px; }
+  .music-item iframe { width: 100%; height: 66px; border: 0; border-radius: 8px; margin-top: 8px; display: block; }
+  .music-item a { color: #b7793f; word-break: break-all; }
+  .music-item .music-title { font-weight: 600; font-size: 16px; }
   textarea { width: 100%; min-height: 280px; padding: 14px; border: 1px solid #ddd2bd; border-radius: 12px; font-size: 17px; line-height: 1.8; background: #fff; resize: vertical; }
   .moods { display: flex; gap: 8px; flex-wrap: wrap; }
   .mood-btn { min-height: 44px; border: 1px solid #ddd2bd; background: #fff; border-radius: 999px; padding: 9px 15px; font-size: 15px; cursor: pointer; }
-  .editor-actions { position: sticky; bottom: 0; background: #fffdf8; padding: 12px 0 4px; margin-top: 14px; }
+  .editor-actions { position: sticky; bottom: calc(64px + env(safe-area-inset-bottom)); background: #fffdf8; padding: 12px 0 4px; margin-top: 14px; }
   .mood-btn.active { background: #33302a; color: #fff; border-color: #33302a; }
   .meta { font-size: 13px; color: #9a917f; }
   .entry { border: 1px solid #eee5d0; border-radius: 12px; background: #fff; padding: 14px; margin-top: 10px; cursor: pointer; }
   .entry h3 { margin: 0 0 4px; font-size: 17px; }
   .entry p { margin: 4px 0 0; color: #6b655a; font-size: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .empty-tip { text-align: center; color: #9a917f; padding: 28px 0 10px; }
-  .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: #33302a; color: #fff; padding: 12px 20px; border-radius: 999px; font-size: 15px; display: none; z-index: 10; max-width: 90vw; text-align: center; }
+  .toast { position: fixed; left: 50%; bottom: calc(88px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: #33302a; color: #fff; padding: 12px 20px; border-radius: 999px; font-size: 15px; display: none; z-index: 30; max-width: 90vw; text-align: center; }
   footer { text-align: center; color: #9a917f; font-size: 13px; margin-top: 24px; }
   @media (min-width: 601px) { .wrap { max-width: 640px; } .cal-day .mood { display: block; font-size: 12px; color: #8a8378; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .cal-day.selected .mood { color: #e8dfcc; } }
 </style>
@@ -60,24 +68,7 @@
     <p id="todayLine"></p>
   </header>
 
-  <div class="card">
-    <div class="row" style="justify-content: space-between;">
-      <div class="tabs">
-        <button class="tab active" id="tabCalendar" type="button">📅 日历</button>
-        <button class="tab" id="tabList" type="button">📖 列表</button>
-      </div>
-      <button class="btn primary" id="newTodayBtn" type="button">写今天的日记</button>
-    </div>
-    <div class="row" style="margin-top: 12px;">
-      <span class="meta" id="statsLine"></span>
-      <span style="flex:1"></span>
-      <button class="btn" id="exportBtn" type="button">导出备份</button>
-      <button class="btn" id="importBtn" type="button">导入备份</button>
-      <input type="file" id="importFile" accept=".json,application/json" style="display:none">
-    </div>
-  </div>
-
-  <div class="card" id="calendarCard">
+  <div class="card" id="calendarCard" style="display:none;">
     <div class="cal-head">
       <button class="btn" id="prevMonth" type="button">‹ 上月</button>
       <h2 id="monthTitle"></h2>
@@ -88,8 +79,19 @@
   </div>
 
   <div class="card" id="listCard" style="display:none;">
-    <input class="search" id="searchInput" type="text" placeholder="搜索标题或内容…">
+    <input class="search" id="searchInput" type="text" placeholder="搜索标题、内容或歌名…">
     <div id="listBox"></div>
+  </div>
+
+  <div class="card" id="backupCard" style="display:none;">
+    <h2 style="margin:0 0 8px;">备份</h2>
+    <p class="meta" id="statsLine" style="margin:0 0 12px;"></p>
+    <p class="meta" style="margin:0 0 12px;">日记只存在这台手机的浏览器里。换手机或清数据前，先导出一份备份文件留着。</p>
+    <div class="row">
+      <button class="btn" id="exportBtn" type="button" style="flex:1;">导出备份</button>
+      <button class="btn" id="importBtn" type="button" style="flex:1;">导入备份</button>
+      <input type="file" id="importFile" accept=".json,application/json" style="display:none">
+    </div>
   </div>
 
   <div class="card" id="editorCard">
@@ -108,6 +110,16 @@
     </div>
     <label for="contentInput">内容</label>
     <textarea id="contentInput" placeholder="今天发生了什么，想说什么就写什么…"></textarea>
+    <label>🎵 今日音乐</label>
+    <p class="meta" style="margin: 0 0 8px;">粘贴歌曲链接就能记下来，一天可以加好几首。网易云和 Spotify 会直接显示播放器，其他链接点开听。</p>
+    <input type="url" id="musicUrlInput" placeholder="粘贴歌曲链接，例如网易云分享链接…" inputmode="url">
+    <div style="height:8px"></div>
+    <input type="text" id="musicTitleInput" placeholder="歌名（可不填）">
+    <div style="height:8px"></div>
+    <input type="text" id="musicArtistInput" placeholder="歌手（可不填）">
+    <div style="height:10px"></div>
+    <button class="btn" id="addMusicBtn" type="button" style="width:100%;">＋ 添加这首歌</button>
+    <div id="musicList"></div>
     <div class="row editor-actions">
       <span class="meta" id="countLine"></span>
       <span style="flex:1"></span>
@@ -119,6 +131,14 @@
 
   <footer>每天一篇，写给自己看。</footer>
 </div>
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <button class="nav-btn active" id="navDiary" type="button"><span class="nav-icon">✍️</span>写日记</button>
+    <button class="nav-btn" id="navCalendar" type="button"><span class="nav-icon">📅</span>日历</button>
+    <button class="nav-btn" id="navList" type="button"><span class="nav-icon">📖</span>列表</button>
+    <button class="nav-btn" id="navBackup" type="button"><span class="nav-icon">💾</span>备份</button>
+  </div>
+</nav>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -132,7 +152,8 @@
   var viewMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   var selectedDate = todayStr;
   var selectedMood = '';
-  var currentView = 'calendar';
+  var currentMusic = [];
+  var currentView = 'diary';
 
   function pad(n) { return (n < 10 ? '0' : '') + n; }
   function toDateStr(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
@@ -140,6 +161,38 @@
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function saveAll() { try { localStorage.setItem(KEY, JSON.stringify(entries)); } catch (e) { toast('保存失败：浏览器存储空间不足'); } }
   function toast(msg) { var t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block'; setTimeout(function () { t.style.display = 'none'; }, 2200); }
+  function parseMusicUrl(url) {
+    var m = url.match(/music\.163\.com\/(?:#\/)?song\?id=(\d+)/) || url.match(/y\.music\.163\.com\/m\/song\?id=(\d+)/) || url.match(/[?&]id=(\d+)/);
+    if (/music\.163\.com|y\.music\.163\.com/.test(url) && m) return { platform: '网易云音乐', id: m[1] };
+    var s = url.match(/open\.spotify\.com\/track\/([A-Za-z0-9]+)/);
+    if (s) return { platform: 'Spotify', id: s[1] };
+    return { platform: '链接', id: '' };
+  }
+  function musicEmbedUrl(song) {
+    if (song.platform === '网易云音乐' && song.id) return 'https://music.163.com/outchain/player?type=2&id=' + song.id + '&auto=0&height=66';
+    if (song.platform === 'Spotify' && song.id) return 'https://open.spotify.com/embed/track/' + song.id;
+    return '';
+  }
+  function renderMusic() {
+    var box = document.getElementById('musicList');
+    box.innerHTML = '';
+    currentMusic.forEach(function (song, idx) {
+      var div = document.createElement('div');
+      div.className = 'music-item';
+      var name = song.title || song.platform || '歌曲';
+      var sub = [song.artist || '', song.platform || ''].filter(Boolean).join(' · ');
+      var embed = musicEmbedUrl(song);
+      div.innerHTML = '<div class="music-title">🎵 ' + esc(name) + '</div>' +
+        (sub ? '<div class="meta">' + esc(sub) + '</div>' : '') +
+        '<a href="' + esc(song.url) + '" target="_blank" rel="noopener">打开歌曲链接 ↗</a>' +
+        (embed ? '<iframe src="' + esc(embed) + '" loading="lazy" allow="autoplay; encrypted-media"></iframe>' : '');
+      var del = document.createElement('button');
+      del.type = 'button'; del.className = 'btn danger'; del.style.marginTop = '8px'; del.textContent = '移除这首';
+      del.addEventListener('click', function () { currentMusic.splice(idx, 1); renderMusic(); });
+      div.appendChild(del);
+      box.appendChild(div);
+    });
+  }
 
   function renderStats() {
     var keys = Object.keys(entries);
@@ -168,7 +221,7 @@
         var html = '<span>' + d + '</span>';
         if (entries[ds]) { html += '<span class="dot"></span>'; if (entries[ds].mood) html += '<span class="mood">' + esc(entries[ds].mood) + '</span>'; }
         btn.innerHTML = html;
-        btn.addEventListener('click', function () { selectDate(ds); });
+        btn.addEventListener('click', function () { selectDate(ds); setView('diary'); });
         grid.appendChild(btn);
       })(d);
     }
@@ -180,7 +233,8 @@
     var keys = Object.keys(entries).sort().reverse().filter(function (k) {
       if (!q) return true;
       var en = entries[k];
-      return (en.title || '').indexOf(q) !== -1 || (en.content || '').indexOf(q) !== -1;
+      var musicText = (en.music || []).map(function (s) { return (s.title || '') + ' ' + (s.artist || ''); }).join(' ');
+      return (en.title || '').indexOf(q) !== -1 || (en.content || '').indexOf(q) !== -1 || musicText.indexOf(q) !== -1;
     });
     if (!keys.length) { box.innerHTML = '<p class="empty-tip">' + (q ? '没有找到相关日记' : '还没有日记，点「写今天的日记」开始第一篇吧') + '</p>'; return; }
     box.innerHTML = '';
@@ -188,8 +242,8 @@
       var en = entries[k];
       var div = document.createElement('div');
       div.className = 'entry';
-      div.innerHTML = '<h3>' + esc(en.title || '无标题') + '</h3><div class="meta">' + esc(k) + (en.mood ? ' · ' + esc(en.mood) : '') + '</div><p>' + esc(en.content || '') + '</p>';
-      div.addEventListener('click', function () { selectDate(k); document.getElementById('editorCard').scrollIntoView({ behavior: 'smooth' }); });
+      div.innerHTML = '<h3>' + esc(en.title || '无标题') + '</h3><div class="meta">' + esc(k) + (en.mood ? ' · ' + esc(en.mood) : '') + ((en.music && en.music.length) ? ' · 🎵 ' + en.music.length + ' 首' : '') + '</div><p>' + esc(en.content || '') + '</p>';
+      div.addEventListener('click', function () { selectDate(k); setView('diary'); });
       box.appendChild(div);
     });
   }
@@ -201,6 +255,8 @@
     document.getElementById('titleInput').value = en.title || '';
     document.getElementById('contentInput').value = en.content || '';
     selectedMood = en.mood || '';
+    currentMusic = (en.music || []).slice();
+    renderMusic();
     document.querySelectorAll('.mood-btn').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-mood') === selectedMood); });
     document.getElementById('editorTitle').textContent = entries[ds] ? '编辑 ' + ds + ' 的日记' : '写 ' + ds + ' 的日记';
     document.getElementById('deleteBtn').style.display = entries[ds] ? '' : 'none';
@@ -216,18 +272,26 @@
 
   function setView(v) {
     currentView = v;
-    document.getElementById('tabCalendar').classList.toggle('active', v === 'calendar');
-    document.getElementById('tabList').classList.toggle('active', v === 'list');
+    document.getElementById('navDiary').classList.toggle('active', v === 'diary');
+    document.getElementById('navCalendar').classList.toggle('active', v === 'calendar');
+    document.getElementById('navList').classList.toggle('active', v === 'list');
+    document.getElementById('navBackup').classList.toggle('active', v === 'backup');
+    document.getElementById('editorCard').style.display = v === 'diary' ? '' : 'none';
     document.getElementById('calendarCard').style.display = v === 'calendar' ? '' : 'none';
     document.getElementById('listCard').style.display = v === 'list' ? '' : 'none';
+    document.getElementById('backupCard').style.display = v === 'backup' ? '' : 'none';
+    if (v === 'calendar') renderCalendar();
     if (v === 'list') renderList();
+    if (v === 'backup') renderStats();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  document.getElementById('tabCalendar').addEventListener('click', function () { setView('calendar'); });
-  document.getElementById('tabList').addEventListener('click', function () { setView('list'); });
+  document.getElementById('navDiary').addEventListener('click', function () { setView('diary'); });
+  document.getElementById('navCalendar').addEventListener('click', function () { setView('calendar'); });
+  document.getElementById('navList').addEventListener('click', function () { setView('list'); });
+  document.getElementById('navBackup').addEventListener('click', function () { setView('backup'); });
   document.getElementById('prevMonth').addEventListener('click', function () { viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1); renderCalendar(); renderStats(); });
   document.getElementById('nextMonth').addEventListener('click', function () { viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1); renderCalendar(); renderStats(); });
-  document.getElementById('newTodayBtn').addEventListener('click', function () { viewMonth = new Date(today.getFullYear(), today.getMonth(), 1); selectDate(todayStr); document.getElementById('editorCard').scrollIntoView({ behavior: 'smooth' }); document.getElementById('contentInput').focus(); });
   document.getElementById('dateInput').addEventListener('change', function () { if (this.value) selectDate(this.value); });
   document.getElementById('contentInput').addEventListener('input', updateCount);
   document.getElementById('searchInput').addEventListener('input', renderList);
@@ -238,12 +302,25 @@
     });
   });
 
+  document.getElementById('addMusicBtn').addEventListener('click', function () {
+    var url = document.getElementById('musicUrlInput').value.trim();
+    if (!url) { toast('先粘贴歌曲链接'); return; }
+    if (!/^https?:\/\//i.test(url)) { toast('链接要以 http 开头'); return; }
+    var parsed = parseMusicUrl(url);
+    currentMusic.push({ url: url, title: document.getElementById('musicTitleInput').value.trim(), artist: document.getElementById('musicArtistInput').value.trim(), platform: parsed.platform, id: parsed.id });
+    document.getElementById('musicUrlInput').value = '';
+    document.getElementById('musicTitleInput').value = '';
+    document.getElementById('musicArtistInput').value = '';
+    renderMusic();
+    toast('已添加，记得点保存');
+  });
+
   document.getElementById('saveBtn').addEventListener('click', function () {
     var ds = document.getElementById('dateInput').value || todayStr;
     var content = document.getElementById('contentInput').value.trim();
     var title = document.getElementById('titleInput').value.trim();
-    if (!content && !title) { toast('先写点内容再保存'); return; }
-    entries[ds] = { date: ds, title: title, mood: selectedMood, content: content, updatedAt: new Date().toLocaleString('zh-CN') };
+    if (!content && !title && !currentMusic.length) { toast('先写点内容或加首歌再保存'); return; }
+    entries[ds] = { date: ds, title: title, mood: selectedMood, content: content, music: currentMusic.slice(), updatedAt: new Date().toLocaleString('zh-CN') };
     saveAll();
     toast('已保存到这台设备');
     selectDate(ds);
