@@ -122,7 +122,7 @@
     <textarea id="contentInput" placeholder="今天发生了什么，想说什么就写什么…"></textarea>
     <label>🎵 今日音乐</label>
     <p class="meta" style="margin: 0 0 8px;">粘贴歌曲链接就能记下来，一天可以加好几首。网易云和 Spotify 会直接显示播放器，其他链接点开听。</p>
-    <input type="url" id="musicUrlInput" placeholder="粘贴歌曲链接，例如网易云分享链接…" inputmode="url">
+    <input type="url" id="musicUrlInput" placeholder="粘贴歌曲链接或网易云分享文字…" inputmode="url">
     <div style="height:8px"></div>
     <input type="text" id="musicTitleInput" placeholder="歌名（可不填）">
     <div style="height:8px"></div>
@@ -172,11 +172,25 @@
   function saveAll() { try { localStorage.setItem(KEY, JSON.stringify(entries)); } catch (e) { toast('保存失败：浏览器存储空间不足'); } }
   function toast(msg) { var t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block'; setTimeout(function () { t.style.display = 'none'; }, 2200); }
   function parseMusicUrl(url) {
-    var m = url.match(/music\.163\.com\/(?:#\/)?song\?id=(\d+)/) || url.match(/y\.music\.163\.com\/m\/song\?id=(\d+)/) || url.match(/[?&]id=(\d+)/);
+    if (/163cn\.tv/.test(url)) return { platform: '网易云音乐（短链）', id: '' };
+    var m = url.match(/[?&]id=(\d+)/);
     if (/music\.163\.com|y\.music\.163\.com/.test(url) && m) return { platform: '网易云音乐', id: m[1] };
     var s = url.match(/open\.spotify\.com\/track\/([A-Za-z0-9]+)/);
     if (s) return { platform: 'Spotify', id: s[1] };
     return { platform: '链接', id: '' };
+  }
+  function parseShareText(text) {
+    var urlMatch = text.match(/https?:\/\/[^\s)）]+/);
+    var titleMatch = text.match(/《([^》]+)》/);
+    var artistMatch = text.match(/分享(.+?)的单曲《/) || text.match(/分享(.+?)《/);
+    return { url: urlMatch ? urlMatch[0].replace(/[）)]+$/, '') : '', title: titleMatch ? titleMatch[1] : '', artist: artistMatch ? artistMatch[1].trim() : '' };
+  }
+  async function resolveShortLink(url) {
+    try {
+      var res = await fetch(url, { mode: 'no-cors', redirect: 'follow' });
+      if (res && res.url && res.url !== url) return res.url;
+    } catch (e) {}
+    return url;
   }
   function musicEmbedUrl(song) {
     if (song.platform === '网易云音乐' && song.id) return 'https://music.163.com/outchain/player?type=2&id=' + song.id + '&auto=0&height=66';
@@ -195,6 +209,7 @@
       div.innerHTML = '<div class="music-title">🎵 ' + esc(name) + '</div>' +
         (sub ? '<div class="meta">' + esc(sub) + '</div>' : '') +
         '<a href="' + esc(song.url) + '" target="_blank" rel="noopener">打开歌曲链接 ↗</a>' +
+        (song.platform === '网易云音乐（短链）' ? '<div class="meta">短链已保存，点开可听；想在页内直接播放，打开短链后复制完整歌曲链接再贴一次。</div>' : '') +
         (embed ? '<iframe src="' + esc(embed) + '" loading="lazy" allow="autoplay; encrypted-media"></iframe>' : '');
       var del = document.createElement('button');
       del.type = 'button'; del.className = 'btn danger'; del.style.marginTop = '8px'; del.textContent = '移除这首';
@@ -323,17 +338,27 @@
     });
   });
 
-  document.getElementById('addMusicBtn').addEventListener('click', function () {
-    var url = document.getElementById('musicUrlInput').value.trim();
-    if (!url) { toast('先粘贴歌曲链接'); return; }
+  document.getElementById('addMusicBtn').addEventListener('click', async function () {
+    var raw = document.getElementById('musicUrlInput').value.trim();
+    if (!raw) { toast('先粘贴歌曲链接'); return; }
+    var shared = parseShareText(raw);
+    var url = shared.url || raw;
     if (!/^https?:\/\//i.test(url)) { toast('链接要以 http 开头'); return; }
+    var title = document.getElementById('musicTitleInput').value.trim() || shared.title;
+    var artist = document.getElementById('musicArtistInput').value.trim() || shared.artist;
     var parsed = parseMusicUrl(url);
-    currentMusic.push({ url: url, title: document.getElementById('musicTitleInput').value.trim(), artist: document.getElementById('musicArtistInput').value.trim(), platform: parsed.platform, id: parsed.id });
+    if (/163cn\.tv/.test(url)) {
+      toast('正在解析短链…');
+      var resolved = await resolveShortLink(url);
+      var reparsed = parseMusicUrl(resolved);
+      if (reparsed.id) { parsed = reparsed; url = resolved; }
+    }
+    currentMusic.push({ url: url, title: title, artist: artist, platform: parsed.platform, id: parsed.id });
     document.getElementById('musicUrlInput').value = '';
     document.getElementById('musicTitleInput').value = '';
     document.getElementById('musicArtistInput').value = '';
     renderMusic();
-    toast('已添加，记得点保存');
+    toast(parsed.id ? '已添加，记得点保存' : '已添加短链，记得点保存');
   });
 
   document.getElementById('saveBtn').addEventListener('click', function () {
