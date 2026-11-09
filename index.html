@@ -18,6 +18,10 @@
   header h1 { margin: 0; font-size: 28px; letter-spacing: 4px; }
   header p { margin: 6px 0 0; color: #8a8378; font-size: 14px; }
   .privacy { background: #fff8e6; border: 1px solid #ead9a8; border-radius: 12px; padding: 10px 14px; font-size: 13px; color: #7a6a3f; margin: 12px 0; }
+  .countdown { background: #33302a; color: #fff; border-radius: 16px; padding: 16px; text-align: center; margin-top: 12px; }
+  .countdown .days { font-size: 42px; font-weight: 700; line-height: 1.1; color: #ffd479; }
+  .countdown .label { font-size: 15px; margin-top: 2px; }
+  .countdown .date { font-size: 13px; color: #c9c0ae; margin-top: 4px; }
   .card { background: #fffdf8; border: 1px solid #e8dfcc; border-radius: 16px; padding: 16px; margin-top: 12px; box-shadow: 0 2px 10px rgba(0,0,0,.04); }
   .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   .tabs { display: flex; gap: 8px; flex: 1; }
@@ -67,6 +71,12 @@
     <h1>我的日记</h1>
     <p id="todayLine"></p>
   </header>
+
+  <div class="countdown">
+    <div class="label">距高考还有</div>
+    <div class="days"><span id="countdownDays">—</span> 天</div>
+    <div class="date">高考 · 2027年6月7日</div>
+  </div>
 
   <div class="card" id="calendarCard" style="display:none;">
     <div class="cal-head">
@@ -192,6 +202,17 @@
       div.appendChild(del);
       box.appendChild(div);
     });
+  }
+
+  function renderCountdown() {
+    var target = new Date(2027, 5, 7);
+    var now = new Date(); now.setHours(0, 0, 0, 0);
+    var days = Math.round((target - now) / 86400000);
+    var el = document.getElementById('countdownDays');
+    if (days > 0) el.textContent = days;
+    else if (days === 0) el.textContent = '0';
+    else el.textContent = '已结束';
+    document.querySelector('.countdown .label').textContent = days === 0 ? '今天就是高考' : (days < 0 ? '高考已经过去' : '距高考还有');
   }
 
   function renderStats() {
@@ -375,6 +396,7 @@
     this.value = '';
   });
 
+  renderCountdown();
   renderStats();
   renderCalendar();
   selectDate(todayStr);
