@@ -2,52 +2,55 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>我的日记</title>
 <style>
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: #f6f1e7; color: #33302a; line-height: 1.6; }
-  .wrap { max-width: 920px; margin: 0 auto; padding: 20px 16px 60px; }
-  header { text-align: center; padding: 18px 0 8px; }
-  header h1 { margin: 0; font-size: 30px; letter-spacing: 4px; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: #f6f1e7; color: #33302a; line-height: 1.6; font-size: 17px; }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 16px 14px calc(28px + env(safe-area-inset-bottom)); }
+  header { text-align: center; padding: 14px 0 6px; }
+  header h1 { margin: 0; font-size: 28px; letter-spacing: 4px; }
   header p { margin: 6px 0 0; color: #8a8378; font-size: 14px; }
-  .privacy { background: #fff8e6; border: 1px solid #ead9a8; border-radius: 12px; padding: 10px 14px; font-size: 13px; color: #7a6a3f; margin: 14px 0; }
-  .card { background: #fffdf8; border: 1px solid #e8dfcc; border-radius: 16px; padding: 18px; margin-top: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.04); }
+  .privacy { background: #fff8e6; border: 1px solid #ead9a8; border-radius: 12px; padding: 10px 14px; font-size: 13px; color: #7a6a3f; margin: 12px 0; }
+  .card { background: #fffdf8; border: 1px solid #e8dfcc; border-radius: 16px; padding: 16px; margin-top: 12px; box-shadow: 0 2px 10px rgba(0,0,0,.04); }
   .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-  .tabs { display: flex; gap: 8px; }
-  .tab { border: 1px solid #ddd2bd; background: #fff; color: #555; border-radius: 999px; padding: 8px 18px; font-size: 15px; cursor: pointer; }
+  .tabs { display: flex; gap: 8px; flex: 1; }
+  .tab { flex: 1; min-height: 46px; border: 1px solid #ddd2bd; background: #fff; color: #555; border-radius: 999px; padding: 10px 12px; font-size: 16px; cursor: pointer; }
   .tab.active { background: #33302a; color: #fff; border-color: #33302a; }
-  .btn { border: 1px solid #ddd2bd; background: #fff; color: #333; border-radius: 10px; padding: 9px 16px; font-size: 15px; cursor: pointer; }
+  .btn { min-height: 46px; border: 1px solid #ddd2bd; background: #fff; color: #333; border-radius: 12px; padding: 11px 16px; font-size: 16px; cursor: pointer; }
   .btn.primary { background: #b7793f; border-color: #b7793f; color: #fff; }
   .btn.danger { background: #fff; color: #b3261e; border-color: #e5b8b4; }
   .btn:disabled { opacity: .5; cursor: default; }
-  .search { flex: 1; min-width: 180px; padding: 10px 14px; border: 1px solid #ddd2bd; border-radius: 10px; font-size: 15px; background: #fff; }
+  #newTodayBtn { width: 100%; min-height: 50px; font-size: 17px; font-weight: 600; }
+  .search { flex: 1; min-width: 180px; min-height: 46px; padding: 11px 14px; border: 1px solid #ddd2bd; border-radius: 12px; font-size: 16px; background: #fff; }
   .cal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
   .cal-head h2 { margin: 0; font-size: 20px; }
   .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
   .cal-week { text-align: center; font-size: 13px; color: #9a917f; padding: 4px 0; }
-  .cal-day { min-height: 64px; border: 1px solid #eee5d0; border-radius: 10px; background: #fff; padding: 6px; cursor: pointer; text-align: left; font-size: 15px; }
+  .cal-day { min-height: 58px; border: 1px solid #eee5d0; border-radius: 12px; background: #fff; padding: 6px 4px; cursor: pointer; text-align: center; font-size: 16px; }
   .cal-day.empty { background: transparent; border-color: transparent; cursor: default; }
   .cal-day.today { border-color: #b7793f; box-shadow: 0 0 0 1px #b7793f inset; }
   .cal-day.selected { background: #33302a; color: #fff; }
   .cal-day.selected .dot { background: #ffd479; }
-  .cal-day .dot { width: 7px; height: 7px; border-radius: 50%; background: #b7793f; display: inline-block; margin-top: 6px; }
-  .cal-day .mood { display: block; font-size: 12px; color: #8a8378; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cal-day .dot { width: 8px; height: 8px; border-radius: 50%; background: #b7793f; display: block; margin: 6px auto 0; }
+  .cal-day .mood { display: none; }
   .cal-day.selected .mood { color: #e8dfcc; }
   label { display: block; font-size: 14px; color: #7a7264; margin: 12px 0 6px; }
-  input[type="date"], input[type="text"] { width: 100%; padding: 11px 12px; border: 1px solid #ddd2bd; border-radius: 10px; font-size: 16px; background: #fff; }
-  textarea { width: 100%; min-height: 220px; padding: 12px; border: 1px solid #ddd2bd; border-radius: 10px; font-size: 16px; line-height: 1.8; background: #fff; resize: vertical; }
+  input[type="date"], input[type="text"] { width: 100%; min-height: 48px; padding: 12px; border: 1px solid #ddd2bd; border-radius: 12px; font-size: 17px; background: #fff; }
+  textarea { width: 100%; min-height: 280px; padding: 14px; border: 1px solid #ddd2bd; border-radius: 12px; font-size: 17px; line-height: 1.8; background: #fff; resize: vertical; }
   .moods { display: flex; gap: 8px; flex-wrap: wrap; }
-  .mood-btn { border: 1px solid #ddd2bd; background: #fff; border-radius: 999px; padding: 7px 14px; font-size: 14px; cursor: pointer; }
+  .mood-btn { min-height: 44px; border: 1px solid #ddd2bd; background: #fff; border-radius: 999px; padding: 9px 15px; font-size: 15px; cursor: pointer; }
+  .editor-actions { position: sticky; bottom: 0; background: #fffdf8; padding: 12px 0 4px; margin-top: 14px; }
   .mood-btn.active { background: #33302a; color: #fff; border-color: #33302a; }
   .meta { font-size: 13px; color: #9a917f; }
   .entry { border: 1px solid #eee5d0; border-radius: 12px; background: #fff; padding: 14px; margin-top: 10px; cursor: pointer; }
   .entry h3 { margin: 0 0 4px; font-size: 17px; }
   .entry p { margin: 4px 0 0; color: #6b655a; font-size: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .empty-tip { text-align: center; color: #9a917f; padding: 28px 0 10px; }
-  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #33302a; color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 14px; display: none; z-index: 10; }
+  .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: #33302a; color: #fff; padding: 12px 20px; border-radius: 999px; font-size: 15px; display: none; z-index: 10; max-width: 90vw; text-align: center; }
   footer { text-align: center; color: #9a917f; font-size: 13px; margin-top: 24px; }
-  @media (max-width: 600px) { .cal-day { min-height: 52px; } header h1 { font-size: 26px; } }
+  @media (min-width: 601px) { .wrap { max-width: 640px; } .cal-day .mood { display: block; font-size: 12px; color: #8a8378; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .cal-day.selected .mood { color: #e8dfcc; } }
 </style>
 </head>
 <body>
@@ -107,11 +110,11 @@
     </div>
     <label for="contentInput">内容</label>
     <textarea id="contentInput" placeholder="今天发生了什么，想说什么就写什么…"></textarea>
-    <div class="row" style="margin-top: 12px;">
+    <div class="row editor-actions">
       <span class="meta" id="countLine"></span>
       <span style="flex:1"></span>
       <button class="btn danger" id="deleteBtn" type="button">删除这篇</button>
-      <button class="btn primary" id="saveBtn" type="button">保存</button>
+      <button class="btn primary" id="saveBtn" type="button" style="flex:1; min-width: 140px;">保存</button>
     </div>
     <p class="meta" id="savedLine" style="margin: 10px 0 0;"></p>
   </div>
