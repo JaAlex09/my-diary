@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的日记</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: #f6f1e7; color: #33302a; line-height: 1.6; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 20px 16px 60px; }
+  header { text-align: center; padding: 18px 0 8px; }
+  header h1 { margin: 0; font-size: 30px; letter-spacing: 4px; }
+  header p { margin: 6px 0 0; color: #8a8378; font-size: 14px; }
+  .privacy { background: #fff8e6; border: 1px solid #ead9a8; border-radius: 12px; padding: 10px 14px; font-size: 13px; color: #7a6a3f; margin: 14px 0; }
+  .card { background: #fffdf8; border: 1px solid #e8dfcc; border-radius: 16px; padding: 18px; margin-top: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.04); }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .tabs { display: flex; gap: 8px; }
+  .tab { border: 1px solid #ddd2bd; background: #fff; color: #555; border-radius: 999px; padding: 8px 18px; font-size: 15px; cursor: pointer; }
+  .tab.active { background: #33302a; color: #fff; border-color: #33302a; }
+  .btn { border: 1px solid #ddd2bd; background: #fff; color: #333; border-radius: 10px; padding: 9px 16px; font-size: 15px; cursor: pointer; }
+  .btn.primary { background: #b7793f; border-color: #b7793f; color: #fff; }
+  .btn.danger { background: #fff; color: #b3261e; border-color: #e5b8b4; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .search { flex: 1; min-width: 180px; padding: 10px 14px; border: 1px solid #ddd2bd; border-radius: 10px; font-size: 15px; background: #fff; }
+  .cal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .cal-head h2 { margin: 0; font-size: 20px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .cal-week { text-align: center; font-size: 13px; color: #9a917f; padding: 4px 0; }
+  .cal-day { min-height: 64px; border: 1px solid #eee5d0; border-radius: 10px; background: #fff; padding: 6px; cursor: pointer; text-align: left; font-size: 15px; }
+  .cal-day.empty { background: transparent; border-color: transparent; cursor: default; }
+  .cal-day.today { border-color: #b7793f; box-shadow: 0 0 0 1px #b7793f inset; }
+  .cal-day.selected { background: #33302a; color: #fff; }
+  .cal-day.selected .dot { background: #ffd479; }
+  .cal-day .dot { width: 7px; height: 7px; border-radius: 50%; background: #b7793f; display: inline-block; margin-top: 6px; }
+  .cal-day .mood { display: block; font-size: 12px; color: #8a8378; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cal-day.selected .mood { color: #e8dfcc; }
+  label { display: block; font-size: 14px; color: #7a7264; margin: 12px 0 6px; }
+  input[type="date"], input[type="text"] { width: 100%; padding: 11px 12px; border: 1px solid #ddd2bd; border-radius: 10px; font-size: 16px; background: #fff; }
+  textarea { width: 100%; min-height: 220px; padding: 12px; border: 1px solid #ddd2bd; border-radius: 10px; font-size: 16px; line-height: 1.8; background: #fff; resize: vertical; }
+  .moods { display: flex; gap: 8px; flex-wrap: wrap; }
+  .mood-btn { border: 1px solid #ddd2bd; background: #fff; border-radius: 999px; padding: 7px 14px; font-size: 14px; cursor: pointer; }
+  .mood-btn.active { background: #33302a; color: #fff; border-color: #33302a; }
+  .meta { font-size: 13px; color: #9a917f; }
+  .entry { border: 1px solid #eee5d0; border-radius: 12px; background: #fff; padding: 14px; margin-top: 10px; cursor: pointer; }
+  .entry h3 { margin: 0 0 4px; font-size: 17px; }
+  .entry p { margin: 4px 0 0; color: #6b655a; font-size: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .empty-tip { text-align: center; color: #9a917f; padding: 28px 0 10px; }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #33302a; color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 14px; display: none; z-index: 10; }
+  footer { text-align: center; color: #9a917f; font-size: 13px; margin-top: 24px; }
+  @media (max-width: 600px) { .cal-day { min-height: 52px; } header h1 { font-size: 26px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>我的日记</h1>
+    <p id="todayLine"></p>
+  </header>
+
+  <div class="privacy">🔒 隐私说明：日记只保存在你这台设备的浏览器里，不会上传到 GitHub，也不会发给任何人。换设备或清浏览器数据前，记得先点「导出备份」。</div>
+
+  <div class="card">
+    <div class="row" style="justify-content: space-between;">
+      <div class="tabs">
+        <button class="tab active" id="tabCalendar" type="button">📅 日历</button>
+        <button class="tab" id="tabList" type="button">📖 列表</button>
+      </div>
+      <button class="btn primary" id="newTodayBtn" type="button">写今天的日记</button>
+    </div>
+    <div class="row" style="margin-top: 12px;">
+      <span class="meta" id="statsLine"></span>
+      <span style="flex:1"></span>
+      <button class="btn" id="exportBtn" type="button">导出备份</button>
+      <button class="btn" id="importBtn" type="button">导入备份</button>
+      <input type="file" id="importFile" accept=".json,application/json" style="display:none">
+    </div>
+  </div>
+
+  <div class="card" id="calendarCard">
+    <div class="cal-head">
+      <button class="btn" id="prevMonth" type="button">‹ 上月</button>
+      <h2 id="monthTitle"></h2>
+      <button class="btn" id="nextMonth" type="button">下月 ›</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <p class="meta" style="margin: 12px 0 0;">点一个日期，就能写那天的日记；有小圆点的日期是已经写过的。</p>
+  </div>
+
+  <div class="card" id="listCard" style="display:none;">
+    <input class="search" id="searchInput" type="text" placeholder="搜索标题或内容…">
+    <div id="listBox"></div>
+  </div>
+
+  <div class="card" id="editorCard">
+    <h2 style="margin:0;" id="editorTitle">写日记</h2>
+    <label for="dateInput">日期</label>
+    <input type="date" id="dateInput">
+    <label for="titleInput">标题（可不填）</label>
+    <input type="text" id="titleInput" placeholder="给今天起个标题…">
+    <label>今天的心情</label>
+    <div class="moods" id="moodBox">
+      <button type="button" class="mood-btn" data-mood="😊 开心">😊 开心</button>
+      <button type="button" class="mood-btn" data-mood="😐 平静">😐 平静</button>
+      <button type="button" class="mood-btn" data-mood="😢 难过">😢 难过</button>
+      <button type="button" class="mood-btn" data-mood="😴 很累">😴 很累</button>
+      <button type="button" class="mood-btn" data-mood="🤩 兴奋">🤩 兴奋</button>
+    </div>
+    <label for="contentInput">内容</label>
+    <textarea id="contentInput" placeholder="今天发生了什么，想说什么就写什么…"></textarea>
+    <div class="row" style="margin-top: 12px;">
+      <span class="meta" id="countLine"></span>
+      <span style="flex:1"></span>
+      <button class="btn danger" id="deleteBtn" type="button">删除这篇</button>
+      <button class="btn primary" id="saveBtn" type="button">保存</button>
+    </div>
+    <p class="meta" id="savedLine" style="margin: 10px 0 0;"></p>
+  </div>
+
+  <footer>每天一篇，写给自己看。</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  var KEY = 'my-diary-v1';
+  var entries = {};
+  try { entries = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { entries = {}; }
+
+  var today = new Date();
+  var todayStr = toDateStr(today);
+  var viewMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  var selectedDate = todayStr;
+  var selectedMood = '';
+  var currentView = 'calendar';
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function toDateStr(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function parseDate(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function saveAll() { try { localStorage.setItem(KEY, JSON.stringify(entries)); } catch (e) { toast('保存失败：浏览器存储空间不足'); } }
+  function toast(msg) { var t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block'; setTimeout(function () { t.style.display = 'none'; }, 2200); }
+
+  function renderStats() {
+    var keys = Object.keys(entries);
+    var thisMonth = keys.filter(function (k) { return k.slice(0, 7) === toDateStr(viewMonth).slice(0, 7); }).length;
+    document.getElementById('statsLine').textContent = '共写了 ' + keys.length + ' 篇 · 本月 ' + thisMonth + ' 篇';
+    document.getElementById('todayLine').textContent = today.getFullYear() + '年' + (today.getMonth() + 1) + '月' + today.getDate() + '日 · ' + ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'][today.getDay()];
+  }
+
+  function renderCalendar() {
+    var y = viewMonth.getFullYear(), m = viewMonth.getMonth();
+    document.getElementById('monthTitle').textContent = y + '年' + (m + 1) + '月';
+    var grid = document.getElementById('calGrid');
+    grid.innerHTML = '';
+    ['日','一','二','三','四','五','六'].forEach(function (w) {
+      var c = document.createElement('div'); c.className = 'cal-week'; c.textContent = w; grid.appendChild(c);
+    });
+    var first = new Date(y, m, 1).getDay();
+    var days = new Date(y, m + 1, 0).getDate();
+    for (var i = 0; i < first; i++) { var e = document.createElement('div'); e.className = 'cal-day empty'; grid.appendChild(e); }
+    for (var d = 1; d <= days; d++) {
+      (function (d) {
+        var ds = y + '-' + pad(m + 1) + '-' + pad(d);
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'cal-day' + (ds === todayStr ? ' today' : '') + (ds === selectedDate ? ' selected' : '');
+        var html = '<span>' + d + '</span>';
+        if (entries[ds]) { html += '<span class="dot"></span>'; if (entries[ds].mood) html += '<span class="mood">' + esc(entries[ds].mood) + '</span>'; }
+        btn.innerHTML = html;
+        btn.addEventListener('click', function () { selectDate(ds); });
+        grid.appendChild(btn);
+      })(d);
+    }
+  }
+
+  function renderList() {
+    var q = (document.getElementById('searchInput').value || '').trim();
+    var box = document.getElementById('listBox');
+    var keys = Object.keys(entries).sort().reverse().filter(function (k) {
+      if (!q) return true;
+      var en = entries[k];
+      return (en.title || '').indexOf(q) !== -1 || (en.content || '').indexOf(q) !== -1;
+    });
+    if (!keys.length) { box.innerHTML = '<p class="empty-tip">' + (q ? '没有找到相关日记' : '还没有日记，点「写今天的日记」开始第一篇吧') + '</p>'; return; }
+    box.innerHTML = '';
+    keys.forEach(function (k) {
+      var en = entries[k];
+      var div = document.createElement('div');
+      div.className = 'entry';
+      div.innerHTML = '<h3>' + esc(en.title || '无标题') + '</h3><div class="meta">' + esc(k) + (en.mood ? ' · ' + esc(en.mood) : '') + '</div><p>' + esc(en.content || '') + '</p>';
+      div.addEventListener('click', function () { selectDate(k); document.getElementById('editorCard').scrollIntoView({ behavior: 'smooth' }); });
+      box.appendChild(div);
+    });
+  }
+
+  function selectDate(ds) {
+    selectedDate = ds;
+    var en = entries[ds] || { date: ds, title: '', mood: '', content: '' };
+    document.getElementById('dateInput').value = ds;
+    document.getElementById('titleInput').value = en.title || '';
+    document.getElementById('contentInput').value = en.content || '';
+    selectedMood = en.mood || '';
+    document.querySelectorAll('.mood-btn').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-mood') === selectedMood); });
+    document.getElementById('editorTitle').textContent = entries[ds] ? '编辑 ' + ds + ' 的日记' : '写 ' + ds + ' 的日记';
+    document.getElementById('deleteBtn').style.display = entries[ds] ? '' : 'none';
+    document.getElementById('savedLine').textContent = en.updatedAt ? '上次保存：' + en.updatedAt : '';
+    updateCount();
+    renderCalendar();
+  }
+
+  function updateCount() {
+    var v = document.getElementById('contentInput').value || '';
+    document.getElementById('countLine').textContent = v.length + ' 字';
+  }
+
+  function setView(v) {
+    currentView = v;
+    document.getElementById('tabCalendar').classList.toggle('active', v === 'calendar');
+    document.getElementById('tabList').classList.toggle('active', v === 'list');
+    document.getElementById('calendarCard').style.display = v === 'calendar' ? '' : 'none';
+    document.getElementById('listCard').style.display = v === 'list' ? '' : 'none';
+    if (v === 'list') renderList();
+  }
+
+  document.getElementById('tabCalendar').addEventListener('click', function () { setView('calendar'); });
+  document.getElementById('tabList').addEventListener('click', function () { setView('list'); });
+  document.getElementById('prevMonth').addEventListener('click', function () { viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1); renderCalendar(); renderStats(); });
+  document.getElementById('nextMonth').addEventListener('click', function () { viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1); renderCalendar(); renderStats(); });
+  document.getElementById('newTodayBtn').addEventListener('click', function () { viewMonth = new Date(today.getFullYear(), today.getMonth(), 1); selectDate(todayStr); document.getElementById('editorCard').scrollIntoView({ behavior: 'smooth' }); document.getElementById('contentInput').focus(); });
+  document.getElementById('dateInput').addEventListener('change', function () { if (this.value) selectDate(this.value); });
+  document.getElementById('contentInput').addEventListener('input', updateCount);
+  document.getElementById('searchInput').addEventListener('input', renderList);
+  document.querySelectorAll('.mood-btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      selectedMood = (selectedMood === b.getAttribute('data-mood')) ? '' : b.getAttribute('data-mood');
+      document.querySelectorAll('.mood-btn').forEach(function (x) { x.classList.toggle('active', x.getAttribute('data-mood') === selectedMood); });
+    });
+  });
+
+  document.getElementById('saveBtn').addEventListener('click', function () {
+    var ds = document.getElementById('dateInput').value || todayStr;
+    var content = document.getElementById('contentInput').value.trim();
+    var title = document.getElementById('titleInput').value.trim();
+    if (!content && !title) { toast('先写点内容再保存'); return; }
+    entries[ds] = { date: ds, title: title, mood: selectedMood, content: content, updatedAt: new Date().toLocaleString('zh-CN') };
+    saveAll();
+    toast('已保存到这台设备');
+    selectDate(ds);
+    renderStats();
+    if (currentView === 'list') renderList();
+  });
+
+  document.getElementById('deleteBtn').addEventListener('click', function () {
+    var ds = document.getElementById('dateInput').value;
+    if (!entries[ds]) return;
+    if (!confirm('确定删除 ' + ds + ' 这篇日记吗？删了就找不回来了。')) return;
+    delete entries[ds];
+    saveAll();
+    toast('已删除');
+    selectDate(ds);
+    renderStats();
+    if (currentView === 'list') renderList();
+  });
+
+  document.getElementById('exportBtn').addEventListener('click', function () {
+    var data = JSON.stringify({ app: 'my-diary', version: 1, exportedAt: new Date().toISOString(), entries: entries }, null, 2);
+    var blob = new Blob([data], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'diary-backup-' + todayStr + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    toast('备份文件已下载');
+  });
+
+  document.getElementById('importBtn').addEventListener('click', function () { document.getElementById('importFile').click(); });
+  document.getElementById('importFile').addEventListener('change', function () {
+    var file = this.files && this.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var data = JSON.parse(reader.result);
+        var incoming = data.entries || data;
+        if (typeof incoming !== 'object' || incoming === null) throw new Error('格式不对');
+        var count = 0;
+        Object.keys(incoming).forEach(function (k) {
+          if (/^\d{4}-\d{2}-\d{2}$/.test(k) && incoming[k] && typeof incoming[k].content === 'string') { entries[k] = incoming[k]; count++; }
+        });
+        if (!count) { toast('备份里没有可导入的日记'); return; }
+        saveAll();
+        toast('已导入 ' + count + ' 篇');
+        selectDate(selectedDate); renderStats(); if (currentView === 'list') renderList();
+      } catch (e) { toast('导入失败：不是有效的备份文件'); }
+    };
+    reader.readAsText(file);
+    this.value = '';
+  });
+
+  renderStats();
+  renderCalendar();
+  selectDate(todayStr);
+})();
+</script>
+</body>
+</html>
